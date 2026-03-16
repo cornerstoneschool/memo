@@ -102,12 +102,11 @@ const Admin = {
         document.getElementById(`preview-${id}`)?.remove();
     },
 
-    uploadPhotos() {
-        if (!Auth.isSuperAdmin()) {
-            Toast.error('Access Denied', 'Only Super Admins can upload photos');
+    async uploadPhotos() {
+        if (!Auth.isSuperAdmin() || !Auth.currentUser.ghToken) {
+            Toast.error('Access Denied', 'Missing GitHub Token or Admin access.');
             return;
         }
-
         if (this.uploadQueue.length === 0) {
             Toast.warning('No Photos', 'Please select photos to upload');
             return;
@@ -115,29 +114,106 @@ const Admin = {
 
         const category = document.getElementById('uploadCategory').value;
         const visibility = document.getElementById('uploadVisibility').value;
+        const uploadBtn = document.querySelector('.btn-upload');
+        
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pushing to GitHub...';
+        Toast.info('Uploading...', 'Do not close this page.');
 
+        const token = Auth.currentUser.ghToken;
+        const owner = Auth.currentUser.repoOwner;
+        const repo = Auth.currentUser.repoName;
         let uploaded = 0;
 
-        this.uploadQueue.forEach(item => {
-            Gallery.addPhoto({
-                src: item.src,
-                name: item.name,
-                category: category,
-                visibility: visibility,
-                dimensions: item.dimensions
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+
+        try {
+            // 1. Fetch JSON Database
+            let fileSha = null;
+            let currentData = { photos: Gallery.photos, categories: Gallery.categories };
+            try {
+                const getResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/data/photos.json`, { headers });
+                if (getResp.ok) {
+                    const getJson = await getResp.json();
+                    fileSha = getJson.sha;
+                    const decodedStr = decodeURIComponent(escape(atob(getJson.content)));
+                    const parsed = JSON.parse(decodedStr);
+                    if(parsed.photos) currentData.photos = parsed.photos;
+                    if(parsed.categories && parsed.categories.length > 0) currentData.categories = parsed.categories;
+                }
+            } catch(e) { console.log("Creating new JSON"); }
+
+            // 2. Upload Images
+            for (const item of this.uploadQueue) {
+                const safeName = "pic_" + Utils.generateId() + ".jpg";
+                const path = `assets/images/${safeName}`;
+                const base64Data = item.src.split(',')[1];
+                
+                const imgResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                    method: 'PUT',
+                    headers: headers,
+                    body: JSON.stringify({ message: `Upload ${safeName}`, content: base64Data, branch: 'main' })
+                });
+
+                if (!imgResp.ok) throw new Error(`Upload failed for ${safeName}`);
+
+                currentData.photos.unshift({
+                    id: Utils.generateId(),
+                    src: path,
+                    name: item.name.split('.')[0] || "Photo",
+                    category: category,
+                    visibility: visibility,
+                    status: 'visible',
+                    uploadedAt: new Date().toISOString(),
+                    reactions: {},
+                    downloads: 0,
+                    views: 0
+                });
+                uploaded++;
+            }
+
+            // 3. Update JSON
+            const updatedJsonStr = JSON.stringify(currentData, null, 4);
+            const encodedJson = btoa(unescape(encodeURIComponent(updatedJsonStr)));
+            
+            const jsonBody = {
+                message: `Database update: ${uploaded} new photos`,
+                content: encodedJson,
+                branch: 'main'
+            };
+            if (fileSha) jsonBody.sha = fileSha;
+
+            const jsonResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/data/photos.json`, {
+                method: 'PUT',
+                headers: headers,
+                body: JSON.stringify(jsonBody)
             });
-            uploaded++;
-        });
 
-        // Clear queue and preview
-        this.uploadQueue = [];
-        document.getElementById('uploadPreview').innerHTML = '';
-        document.getElementById('fileInput').value = '';
+            if (!jsonResp.ok) throw new Error("Failed to update JSON");
 
-        Toast.success('Uploaded!', `${uploaded} photo(s) uploaded successfully`);
-        this.loadManageGrid();
-        Gallery.renderCategories();
-        Gallery.renderFeatured();
+            // Success cleanup
+            this.uploadQueue = [];
+            document.getElementById('uploadPreview').innerHTML = '';
+            document.getElementById('fileInput').value = '';
+            Gallery.photos = currentData.photos;
+            Utils.storage.set('photos', Gallery.photos);
+            this.loadManageGrid();
+            Gallery.render();
+            Gallery.updateStats();
+            if(typeof Gallery.renderFeatured === 'function') Gallery.renderFeatured();
+            
+            Toast.success('Live!', `${uploaded} photos pushed to GitHub!`);
+
+        } catch (error) {
+            console.error(error);
+            Toast.error("Error", error.message);
+        } finally {
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Photos';
+        }
     },
 
     loadManageGrid() {

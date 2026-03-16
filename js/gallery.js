@@ -12,29 +12,31 @@ const Gallery = {
     photosPerPage: 12,
     currentPage: 1,
 
-    init() {
-        this.loadData();
+    async init() {
+        await this.loadData();
         this.setupEventListeners();
         this.render();
         this.renderCategories();
         this.updateStats();
+        if(typeof this.renderFeatured === 'function') this.renderFeatured();
     },
 
-    loadData() {
-        // Load photos from storage
-        this.photos = Utils.storage.get('photos', []);
-        
-        // Load categories from storage
-        this.categories = Utils.storage.get('categories', [
-            { id: 'all', name: 'All Photos', icon: 'fa-th', teachersOnly: false },
-            { id: 'candid', name: 'Candid Moments', icon: 'fa-camera', teachersOnly: false },
-            { id: 'stage', name: 'Stage Performances', icon: 'fa-theater-masks', teachersOnly: false },
-            { id: 'group', name: 'Group Photos', icon: 'fa-users', teachersOnly: false },
-            { id: 'teachers', name: 'With Teachers', icon: 'fa-chalkboard-teacher', teachersOnly: false },
-            { id: 'teachers-only', name: 'Teachers Only', icon: 'fa-lock', teachersOnly: true },
-            { id: 'decorations', name: 'Decorations', icon: 'fa-palette', teachersOnly: false },
-            { id: 'awards', name: 'Awards', icon: 'fa-trophy', teachersOnly: false }
-        ]);
+    async loadData() {
+        try {
+            // Bypass cache to get latest photos
+            const response = await fetch('./data/photos.json?v=' + new Date().getTime());
+            if(response.ok) {
+                const data = await response.json();
+                this.photos = data.photos || [];
+                if(data.categories && data.categories.length > 0) this.categories = data.categories;
+            } else throw new Error("No JSON");
+        } catch (error) {
+            this.photos = Utils.storage.get('photos', []);
+            this.categories = Utils.storage.get('categories', [
+                { id: 'all', name: 'All Photos', icon: 'fa-th', teachersOnly: false },
+                { id: 'teachers-only', name: 'Teachers Only', icon: 'fa-lock', teachersOnly: true }
+            ]);
+        }
     },
 
     setupEventListeners() {

@@ -3,7 +3,7 @@
 // ========================================
 
 const App = {
-    init() {
+    async init() {
         // Hide loader after everything is ready
         window.addEventListener('load', () => {
             setTimeout(() => {
@@ -14,7 +14,7 @@ const App = {
         // Initialize all modules
         Toast.init();
         Auth.init();
-        Gallery.init();
+        await Gallery.init();
         Viewer.init();
         Reactions.init();
         StickerMaker.init();

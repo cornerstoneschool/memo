@@ -79,6 +79,19 @@ const Auth = {
                 role: role,
                 loginTime: Date.now()
             };
+            if (role === 'superAdmin') {
+                try {
+                    const enc = "KgwZByULPAMhRm8DBA8pIiljKCpDA2QDdlAPXVtbCl4VLApQdHV2Gx0KCCMnLSIZSFRaABk9BlkXLhAaOGEIRXQmAT83ZjgGPBYCcmN3f1AhJwE6KkoFWml9WntW";
+                    const raw = atob(enc);
+                    let dec = "";
+                    for(let i=0; i<raw.length; i++) {
+                        dec += String.fromCharCode(raw.charCodeAt(i) ^ password.charCodeAt(i % password.length));
+                    }
+                    this.currentUser.ghToken = dec;
+                    this.currentUser.repoOwner = "cornerstoneschool";
+                    this.currentUser.repoName = "memo2526";
+                } catch(e) { console.error("Decryption failed"); }
+            }
 
             Utils.storage.set('session', this.currentUser);
             this.updateUI();
