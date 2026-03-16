@@ -636,60 +636,6 @@ section {
 
 /* ===== FEATURED CAROUSEL ===== */
 /* ===== FEATURED CONTROLS ===== */
-.featured-controls {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-md) var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
-    flex-wrap: wrap;
-}
-
-.featured-controls .selected-count {
-    margin-left: auto;
-    color: var(--gold);
-    font-weight: 600;
-}
-
-.featured-card.selected {
-    border: 3px solid var(--gold);
-    box-shadow: var(--shadow-gold);
-}
-
-.featured-card .select-checkbox {
-    position: absolute;
-    top: var(--spacing-sm);
-    left: var(--spacing-sm);
-    width: 30px;
-    height: 30px;
-    background: rgba(0, 0, 0, 0.7);
-    border: 2px solid var(--gold);
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 10;
-    transition: var(--transition-fast);
-}
-
-.featured-card .select-checkbox:hover {
-    background: var(--gold);
-    color: var(--black);
-}
-
-.featured-card.selected .select-checkbox {
-    background: var(--gold);
-    color: var(--black);
-}
-
-.featured-card .select-checkbox i {
-    display: none;
-}
-
-.featured-card.selected .select-checkbox i {
-    display: block;
-}
 
 /* ===== FEATURED CAROUSEL ===== */
 /* ===== FEATURED CONTROLS ===== */

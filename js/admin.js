@@ -141,23 +141,23 @@ const Admin = {
     },
 
     loadManageGrid() {
-        const grid = document.getElementById('manageGrid');
-        if (!grid) return;
+    const grid = document.getElementById('manageGrid');
+    if (!grid) return;
 
-        const photos = Gallery.photos;
+    let photos = [...Gallery.photos];
 
-        if (photos.length === 0) {
-            grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--text-muted);">No photos uploaded yet</p>';
-            return;
-        }
+    if (photos.length === 0) {
+        grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--text-muted);">No photos uploaded yet</p>';
+        return;
+    }
 
-        // Apply filters
-        const statusFilter = document.getElementById('manageStatusFilter')?.value || 'all';
-        const categoryFilter = document.getElementById('manageFilter')?.value || 'all';
+    // Apply filters
+    const statusFilter = document.getElementById('manageStatusFilter')?.value || 'all';
+    const categoryFilter = document.getElementById('manageFilter')?.value || 'all';
 
-        if (statusFilter !== 'all') {
-            photos = photos.filter(p => p.status === statusFilter);
-        }
+    if (statusFilter !== 'all') {
+        photos = photos.filter(p => p.status === statusFilter);
+    }
 
         if (categoryFilter !== 'all') {
             photos = photos.filter(p => p.category === categoryFilter);
@@ -213,7 +213,175 @@ const Admin = {
             item.style.display = matches || !query ? '' : 'none';
         });
     },
+        filterByStatus(status) {
+        this.loadManageGrid();
+    },
 
+    filterByCategory(category) {
+        this.loadManageGrid();
+    },
+
+    selectAllPhotos() {
+        const visiblePhotos = document.querySelectorAll('.manage-item');
+        visiblePhotos.forEach(item => {
+            const id = item.dataset.id;
+            if (id && !this.selectedPhotos.includes(id)) {
+                this.selectedPhotos.push(id);
+            }
+            item.classList.add('selected');
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = true;
+        });
+        Toast.success('Selected', `${this.selectedPhotos.length} photos selected`);
+    },
+
+    deselectAllPhotos() {
+        this.selectedPhotos = [];
+        document.querySelectorAll('.manage-item').forEach(item => {
+            item.classList.remove('selected');
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = false;
+        });
+        Toast.info('Deselected', 'All photos deselected');
+    },
+
+    hideSelected() {
+        if (this.selectedPhotos.length === 0) {
+            Toast.warning('None Selected', 'Please select photos first');
+            return;
+        }
+
+        this.selectedPhotos.forEach(id => {
+            const photo = Gallery.photos.find(p => p.id === id);
+            if (photo) photo.status = 'hidden';
+        });
+
+        Gallery.savePhotos();
+        this.loadManageGrid();
+        Gallery.render();
+        Toast.success('Hidden', `${this.selectedPhotos.length} photos hidden`);
+    },
+
+    showSelected() {
+        if (this.selectedPhotos.length === 0) {
+            Toast.warning('None Selected', 'Please select photos first');
+            return;
+        }
+
+        this.selectedPhotos.forEach(id => {
+            const photo = Gallery.photos.find(p => p.id === id);
+            if (photo) photo.status = 'visible';
+        });
+
+        Gallery.savePhotos();
+        this.loadManageGrid();
+        Gallery.render();
+        Toast.success('Visible', `${this.selectedPhotos.length} photos now visible`);
+    },
+
+    featureSelected() {
+        if (this.selectedPhotos.length === 0) {
+            Toast.warning('None Selected', 'Please select photos first');
+            return;
+        }
+
+        this.selectedPhotos.forEach(id => {
+            const photo = Gallery.photos.find(p => p.id === id);
+            if (photo) photo.status = 'featured';
+        });
+
+        Gallery.savePhotos();
+        this.loadManageGrid();
+        Gallery.renderFeatured();
+        Toast.success('Featured', `${this.selectedPhotos.length} photos marked as featured`);
+    },
+
+    unfeatureSelected() {
+        if (this.selectedPhotos.length === 0) {
+            Toast.warning('None Selected', 'Please select photos first');
+            return;
+        }
+
+        this.selectedPhotos.forEach(id => {
+            const photo = Gallery.photos.find(p => p.id === id);
+            if (photo && photo.status === 'featured') {
+                photo.status = 'visible';
+            }
+        });
+
+        Gallery.savePhotos();
+        this.loadManageGrid();
+        Gallery.renderFeatured();
+        Toast.success('Unfeatured', 'Selected photos unfeatured');
+    },
+
+    openEditModal(photoId) {
+        const photo = Gallery.photos.find(p => p.id === photoId);
+        if (!photo) return;
+
+        this.currentEditPhotoId = photoId;
+
+        const previewEl = document.getElementById('editPhotoPreview');
+        const nameEl = document.getElementById('editPhotoName');
+        const visibilityEl = document.getElementById('editPhotoVisibility');
+        const statusEl = document.getElementById('editPhotoStatus');
+        
+        if (previewEl) previewEl.src = photo.src;
+        if (nameEl) nameEl.value = photo.name || '';
+        if (visibilityEl) visibilityEl.value = photo.visibility || 'public';
+        if (statusEl) statusEl.value = photo.status || 'visible';
+
+        const categorySelect = document.getElementById('editPhotoCategory');
+        if (categorySelect) {
+            categorySelect.innerHTML = Gallery.categories.map(cat => `
+                <option value="${cat.id}" ${photo.category === cat.id ? 'selected' : ''}>${cat.name}</option>
+            `).join('');
+        }
+
+        document.getElementById('editPhotoModal').classList.add('active');
+    },
+
+    closeEditModal() {
+        document.getElementById('editPhotoModal').classList.remove('active');
+        this.currentEditPhotoId = null;
+    },
+
+    savePhotoEdit() {
+        if (!this.currentEditPhotoId) return;
+
+        const photo = Gallery.photos.find(p => p.id === this.currentEditPhotoId);
+        if (!photo) return;
+
+        const nameEl = document.getElementById('editPhotoName');
+        const categoryEl = document.getElementById('editPhotoCategory');
+        const visibilityEl = document.getElementById('editPhotoVisibility');
+        const statusEl = document.getElementById('editPhotoStatus');
+
+        if (nameEl) photo.name = nameEl.value;
+        if (categoryEl) photo.category = categoryEl.value;
+        if (visibilityEl) photo.visibility = visibilityEl.value;
+        if (statusEl) photo.status = statusEl.value;
+
+        Gallery.savePhotos();
+        this.loadManageGrid();
+        Gallery.render();
+        Gallery.renderFeatured();
+        this.closeEditModal();
+
+        Toast.success('Saved', 'Photo updated successfully');
+    },
+
+    deleteCurrentPhoto() {
+        if (!this.currentEditPhotoId) return;
+
+        if (!confirm('Are you sure you want to delete this photo?')) return;
+
+        Gallery.deletePhoto(this.currentEditPhotoId);
+        this.closeEditModal();
+        this.loadManageGrid();
+
+        Toast.success('Deleted', 'Photo deleted successfully');
+    },
     togglePhotoSelection(photoId) {
         const index = this.selectedPhotos.indexOf(photoId);
         if (index !== -1) {
