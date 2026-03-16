@@ -102,7 +102,7 @@ const Auth = {
                     }
                     this.currentUser.ghToken = dec;
                     this.currentUser.repoOwner = "cornerstoneschool";
-                    this.currentUser.repoName = "memo2526";
+                    this.currentUser.repoName = "memo";
                 } catch(e) { console.error("Decryption failed"); }
             }
 
