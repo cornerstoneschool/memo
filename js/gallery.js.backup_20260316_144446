@@ -108,11 +108,6 @@ const Gallery = {
     getFilteredPhotos() {
         let photos = [...this.photos];
 
-        // Filter out hidden photos (unless admin)
-        if (!Auth.isSuperAdmin()) {
-            photos = photos.filter(p => p.status !== 'hidden');
-        }
-
         // Filter by category
         if (this.currentCategory !== 'all') {
             photos = photos.filter(p => p.category === this.currentCategory);
@@ -386,24 +381,10 @@ const Gallery = {
 
     // Featured photos (most reactions)
     getFeaturedPhotos(limit = 10) {
-        // First get photos marked as featured
-        let featured = this.photos.filter(p => p.status === 'featured');
-
-        // Filter by visibility
-        featured = featured.filter(p => p.visibility !== 'teachers' || Auth.canViewTeacherContent());
-
-        // If not enough featured, add most reacted
-        if (featured.length < limit) {
-            const remaining = this.photos
-                .filter(p => p.status !== 'featured' && p.status !== 'hidden')
-                .filter(p => p.visibility !== 'teachers' || Auth.canViewTeacherContent())
-                .sort((a, b) => this.getTotalReactions(b) - this.getTotalReactions(a))
-                .slice(0, limit - featured.length);
-
-            featured = [...featured, ...remaining];
-        }
-
-        return featured.slice(0, limit);
+        return this.photos
+            .filter(p => p.visibility !== 'teachers' || Auth.canViewTeacherContent())
+            .sort((a, b) => this.getTotalReactions(b) - this.getTotalReactions(a))
+            .slice(0, limit);
     },
 
     renderFeatured() {
@@ -420,19 +401,13 @@ const Gallery = {
         }
 
         container.innerHTML = featured.map(photo => `
-            <div class="featured-card" data-id="${photo.id}" onclick="Featured.toggleSelect('${photo.id}')">
-                <div class="select-checkbox">
-                    <i class="fas fa-check"></i>
-                </div>
+            <div class="featured-card" onclick="Viewer.open('${photo.id}')">
                 <img src="${photo.src}" alt="${photo.name || 'Featured Photo'}">
                 <div class="card-overlay">
                     <div class="card-reactions">
                         <span>❤️ ${photo.reactions?.love || 0}</span>
                         <span>🔥 ${photo.reactions?.fire || 0}</span>
                     </div>
-                    <button class="view-btn-small" onclick="event.stopPropagation(); Viewer.open('${photo.id}')">
-                        <i class="fas fa-expand"></i>
-                    </button>
                 </div>
             </div>
         `).join('');
@@ -452,92 +427,3 @@ function scrollToGallery() {
     const gallery = document.getElementById('gallery');
     Utils.scrollToElement(gallery, 80);
 }
-
-
-// Featured Photos Selection Handler
-const Featured = {
-    selectedIds: [],
-
-    toggleSelect(photoId) {
-        const card = document.querySelector(`.featured-card[data-id="${photoId}"]`);
-        const index = this.selectedIds.indexOf(photoId);
-
-        if (index !== -1) {
-            this.selectedIds.splice(index, 1);
-            if (card) card.classList.remove('selected');
-        } else {
-            this.selectedIds.push(photoId);
-            if (card) card.classList.add('selected');
-        }
-
-        this.updateCount();
-    },
-
-    selectAll() {
-        const featured = Gallery.getFeaturedPhotos();
-        this.selectedIds = featured.map(p => p.id);
-
-        document.querySelectorAll('.featured-card').forEach(card => {
-            card.classList.add('selected');
-        });
-
-        this.updateCount();
-        Toast.success('Selected All', `${this.selectedIds.length} photos selected`);
-    },
-
-    deselectAll() {
-        this.selectedIds = [];
-
-        document.querySelectorAll('.featured-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-
-        this.updateCount();
-        Toast.info('Deselected', 'All photos deselected');
-    },
-
-    updateCount() {
-        const countEl = document.getElementById('featuredSelectedCount');
-        if (countEl) {
-            countEl.textContent = this.selectedIds.length;
-        }
-    },
-
-    addSelectedToSlideshow() {
-        if (this.selectedIds.length === 0) {
-            Toast.warning('None Selected', 'Please select photos first');
-            return;
-        }
-
-        let added = 0;
-        this.selectedIds.forEach(id => {
-            const photo = Gallery.photos.find(p => p.id === id);
-            if (photo && !Slideshow.selectedIds.includes(id)) {
-                Slideshow.photos.push(photo);
-                Slideshow.selectedIds.push(id);
-                added++;
-            }
-        });
-
-        Slideshow.savePhotos();
-        Toast.success('Added!', `${added} photos added to slideshow`);
-    },
-
-    downloadSelected() {
-        if (this.selectedIds.length === 0) {
-            Toast.warning('None Selected', 'Please select photos first');
-            return;
-        }
-
-        Toast.info('Downloading...', `Preparing ${this.selectedIds.length} photos`);
-
-        this.selectedIds.forEach((id, index) => {
-            const photo = Gallery.photos.find(p => p.id === id);
-            if (photo) {
-                setTimeout(() => {
-                    Utils.downloadFile(photo.src, `featured-${index + 1}.jpg`);
-                }, index * 500);
-            }
-        });
-    }
-};

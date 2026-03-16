@@ -150,91 +150,12 @@
             </div>
 
             <!-- Manage Tab -->
-<div class="admin-tab-content" id="manageTab">
-    <div class="manage-toolbar">
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" placeholder="Search photos..." id="manageSearch">
-        </div>
-        <select id="manageFilter" onchange="Admin.filterByCategory(this.value)">
-            <option value="all">All Categories</option>
-        </select>
-        <select id="manageStatusFilter" onchange="Admin.filterByStatus(this.value)">
-            <option value="all">All Status</option>
-            <option value="visible">Visible</option>
-            <option value="hidden">Hidden</option>
-            <option value="featured">Featured</option>
-        </select>
-    </div>
-    <div class="manage-actions">
-        <button class="btn-gold" onclick="Admin.selectAllPhotos()">
-            <i class="fas fa-check-double"></i> Select All
-        </button>
-        <button class="btn-gold" onclick="Admin.deselectAllPhotos()">
-            <i class="fas fa-times"></i> Deselect All
-        </button>
-        <button class="btn-gold" onclick="Admin.hideSelected()">
-            <i class="fas fa-eye-slash"></i> Hide
-        </button>
-        <button class="btn-gold" onclick="Admin.showSelected()">
-            <i class="fas fa-eye"></i> Show
-        </button>
-        <button class="btn-gold" onclick="Admin.featureSelected()">
-            <i class="fas fa-star"></i> Feature
-        </button>
-        <button class="btn-gold" onclick="Admin.unfeatureSelected()">
-            <i class="far fa-star"></i> Unfeature
-        </button>
-        <button class="btn-danger" onclick="deleteSelected()">
-            <i class="fas fa-trash"></i> Delete
-        </button>
-    </div>
-    <div class="manage-grid" id="manageGrid"></div>
-    
-    <!-- Edit Photo Modal -->
-    <div id="editPhotoModal" class="edit-modal">
-        <div class="edit-modal-content glass-card">
-            <button class="modal-close" onclick="Admin.closeEditModal()">&times;</button>
-            <h3><i class="fas fa-edit"></i> Edit Photo</h3>
-            <div class="edit-preview">
-                <img id="editPhotoPreview" src="" alt="Preview">
-            </div>
-            <div class="edit-form">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="editPhotoName" placeholder="Photo name">
-                </div>
-                <div class="form-group">
-                    <label>Category</label>
-                    <select id="editPhotoCategory"></select>
-                </div>
-                <div class="form-group">
-                    <label>Visibility</label>
-                    <select id="editPhotoVisibility">
-                        <option value="public">Public</option>
-                        <option value="teachers">Teachers Only</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Status</label>
-                    <select id="editPhotoStatus">
-                        <option value="visible">Visible</option>
-                        <option value="hidden">Hidden</option>
-                        <option value="featured">Featured</option>
-                    </select>
-                </div>
-                <div class="edit-actions">
-                    <button class="btn-gold" onclick="Admin.savePhotoEdit()">
-                        <i class="fas fa-save"></i> Save
-                    </button>
-                    <button class="btn-danger" onclick="Admin.deleteCurrentPhoto()">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+            <div class="admin-tab-content" id="manageTab">
+                <div class="manage-toolbar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search photos..." id="manageSearch">
+                    </div>
                     <select id="manageFilter">
                         <option value="all">All Categories</option>
                     </select>

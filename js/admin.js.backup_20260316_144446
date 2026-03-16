@@ -5,7 +5,6 @@
 const Admin = {
     uploadQueue: [],
     selectedPhotos: [],
-    currentEditPhotoId: null,
 
     init() {
         this.setupEventListeners();
@@ -151,48 +150,12 @@ const Admin = {
             return;
         }
 
-        // Apply filters
-        const statusFilter = document.getElementById('manageStatusFilter')?.value || 'all';
-        const categoryFilter = document.getElementById('manageFilter')?.value || 'all';
-
-        if (statusFilter !== 'all') {
-            photos = photos.filter(p => p.status === statusFilter);
-        }
-
-        if (categoryFilter !== 'all') {
-            photos = photos.filter(p => p.category === categoryFilter);
-        }
-
-        if (photos.length === 0) {
-            grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--text-muted);">No photos found</p>';
-            return;
-        }
-
-        grid.innerHTML = photos.map(photo => {
-            const isSelected = this.selectedPhotos.includes(photo.id);
-            const status = photo.status || 'visible';
-            let statusBadge = '';
-
-            if (status === 'hidden') {
-                statusBadge = '<span class="status-badge hidden">Hidden</span>';
-            } else if (status === 'featured') {
-                statusBadge = '<span class="status-badge featured">★ Featured</span>';
-            }
-
-            return `
-                <div class="manage-item ${isSelected ? 'selected' : ''}" data-id="${photo.id}">
-                    <input type="checkbox" ${isSelected ? 'checked' : ''} 
-                           onclick="event.stopPropagation();" 
-                           onchange="Admin.togglePhotoSelection('${photo.id}')">
-                    <img src="${photo.src}" alt="${photo.name || 'Photo'}" 
-                         onclick="Admin.openEditModal('${photo.id}')">
-                    <button class="edit-btn" onclick="event.stopPropagation(); Admin.openEditModal('${photo.id}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    ${statusBadge}
-                </div>
-            `;
-        }).join('');
+        grid.innerHTML = photos.map(photo => `
+            <div class="manage-item" data-id="${photo.id}">
+                <input type="checkbox" onchange="Admin.togglePhotoSelection('${photo.id}')">
+                <img src="${photo.src}" alt="${photo.name || 'Photo'}">
+            </div>
+        `).join('');
     },
 
     filterManageGrid(query) {

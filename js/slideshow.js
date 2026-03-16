@@ -4,20 +4,22 @@
 
 const Slideshow = {
     photos: [],
+    selectedIds: [],
     currentIndex: 0,
     isPlaying: false,
     interval: null,
+    progressInterval: null,
     duration: 3000,
     transition: 'fade',
 
     init() {
         this.photos = Utils.storage.get('slideshowPhotos', []);
+        this.selectedIds = this.photos.map(p => p.id);
         this.setupEventListeners();
         this.updateUI();
     },
 
     setupEventListeners() {
-        // Duration slider
         const durationSlider = document.getElementById('slideDuration');
         const durationValue = document.getElementById('durationValue');
 
@@ -28,13 +30,34 @@ const Slideshow = {
             });
         }
 
-        // Transition select
         const transitionSelect = document.getElementById('slideTransition');
         if (transitionSelect) {
             transitionSelect.addEventListener('change', (e) => {
                 this.transition = e.target.value;
             });
         }
+
+        // Keyboard controls for fullscreen
+        document.addEventListener('keydown', (e) => {
+            const fs = document.getElementById('fullscreenSlideshow');
+            if (!fs || !fs.classList.contains('active')) return;
+
+            switch (e.key) {
+                case 'Escape':
+                    this.exitFullscreen();
+                    break;
+                case 'ArrowLeft':
+                    this.prev();
+                    break;
+                case 'ArrowRight':
+                    this.next();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    this.toggle();
+                    break;
+            }
+        });
     },
 
     open() {
@@ -49,11 +72,13 @@ const Slideshow = {
 
     loadAvailablePhotos() {
         const grid = document.getElementById('slideshowPhotosGrid');
+        if (!grid) return;
+        
         const allPhotos = Gallery.getFilteredPhotos();
 
         grid.innerHTML = allPhotos.map((photo, index) => {
-            const isSelected = this.photos.some(p => p.id === photo.id);
-            const orderIndex = this.photos.findIndex(p => p.id === photo.id);
+            const isSelected = this.selectedIds.includes(photo.id);
+            const orderIndex = this.selectedIds.indexOf(photo.id);
 
             return `
                 <div class="slideshow-photo-item ${isSelected ? 'selected' : ''}" 
@@ -64,65 +89,173 @@ const Slideshow = {
                 </div>
             `;
         }).join('');
+
+        this.updateCount();
     },
 
     togglePhoto(photoId) {
-        const existingIndex = this.photos.findIndex(p => p.id === photoId);
+        const existingIndex = this.selectedIds.indexOf(photoId);
         
         if (existingIndex !== -1) {
-            this.photos.splice(existingIndex, 1);
+            this.selectedIds.splice(existingIndex, 1);
+            this.photos = this.photos.filter(p => p.id !== photoId);
         } else {
             const photo = Gallery.photos.find(p => p.id === photoId);
             if (photo) {
+                this.selectedIds.push(photoId);
                 this.photos.push(photo);
             }
         }
 
-        Utils.storage.set('slideshowPhotos', this.photos);
+        this.savePhotos();
         this.loadAvailablePhotos();
-        this.updateUI();
+    },
+
+    selectAll() {
+        const allPhotos = Gallery.getFilteredPhotos();
+        this.photos = [...allPhotos];
+        this.selectedIds = allPhotos.map(p => p.id);
+        this.savePhotos();
+        this.loadAvailablePhotos();
+        Toast.success('Selected All', `${this.photos.length} photos selected`);
+    },
+
+    deselectAll() {
+        this.photos = [];
+        this.selectedIds = [];
+        this.savePhotos();
+        this.loadAvailablePhotos();
+        Toast.info('Deselected', 'All photos deselected');
+    },
+
+    removeSelected() {
+        if (this.selectedIds.length === 0) {
+            Toast.warning('None Selected', 'No photos to remove');
+            return;
+        }
+
+        const count = this.selectedIds.length;
+        this.photos = [];
+        this.selectedIds = [];
+        this.savePhotos();
+        this.loadAvailablePhotos();
+        Toast.success('Removed', `${count} photos removed from slideshow`);
+    },
+
+    savePhotos() {
+        Utils.storage.set('slideshowPhotos', this.photos);
+    },
+
+    updateCount() {
+        const countEl = document.getElementById('slideshowCount');
+        if (countEl) {
+            countEl.textContent = this.selectedIds.length;
+        }
     },
 
     updateUI() {
-        const countEl = document.getElementById('slideshowCount');
-        const previewEl = document.getElementById('slideshowPreview');
-
-        if (countEl) {
-            countEl.textContent = this.photos.length;
-        }
-
-        if (previewEl) {
-            if (this.photos.length === 0) {
-                previewEl.innerHTML = `
-                    <div class="no-photos">
-                        <i class="fas fa-images"></i>
-                        <p>Select photos below to create a slideshow</p>
-                    </div>
-                `;
-            } else {
-                const currentPhoto = this.photos[this.currentIndex];
-                previewEl.innerHTML = `<img src="${currentPhoto.src}" alt="Slideshow">`;
-            }
-        }
+        this.updateCount();
     },
 
-    play() {
+    // Fullscreen Slideshow
+    launchFullscreen() {
         if (this.photos.length === 0) {
             Toast.warning('No Photos', 'Please select photos for the slideshow');
             return;
         }
 
+        // Close modal
+        document.getElementById('slideshowModal').classList.remove('active');
+
+        // Open fullscreen
+        const fs = document.getElementById('fullscreenSlideshow');
+        fs.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        this.currentIndex = 0;
+        this.updateFullscreenSlide();
+        this.updateSlideCounter();
+
+        // Auto-play
+        setTimeout(() => {
+            this.play();
+        }, 500);
+    },
+
+    exitFullscreen() {
+        this.stop();
+        const fs = document.getElementById('fullscreenSlideshow');
+        if (fs) {
+            fs.classList.remove('active');
+        }
+        document.body.style.overflow = '';
+    },
+
+    updateFullscreenSlide() {
+        const img = document.getElementById('fsSlideImage');
+        const currentPhoto = this.photos[this.currentIndex];
+
+        if (!currentPhoto || !img) return;
+
+        // Apply transition
+        const outClass = this.getOutClass();
+        const inClass = this.getInClass();
+
+        img.classList.add(outClass);
+
+        setTimeout(() => {
+            img.src = currentPhoto.src;
+            img.classList.remove(outClass);
+            img.classList.add(inClass);
+
+            setTimeout(() => {
+                img.classList.remove(inClass);
+            }, 500);
+        }, 300);
+
+        this.updateSlideCounter();
+    },
+
+    getOutClass() {
+        switch (this.transition) {
+            case 'slide': return 'slide-out-left';
+            case 'zoom': return 'zoom-out';
+            default: return 'fade-out';
+        }
+    },
+
+    getInClass() {
+        switch (this.transition) {
+            case 'slide': return 'slide-in-right';
+            case 'zoom': return 'zoom-in';
+            default: return 'fade-in';
+        }
+    },
+
+    updateSlideCounter() {
+        const currentEl = document.getElementById('fsCurrentSlide');
+        const totalEl = document.getElementById('fsTotalSlides');
+        if (currentEl) currentEl.textContent = this.currentIndex + 1;
+        if (totalEl) totalEl.textContent = this.photos.length;
+    },
+
+    play() {
+        if (this.photos.length === 0) return;
+
         this.isPlaying = true;
         this.updatePlayButton();
+        this.startProgress();
 
         this.interval = setInterval(() => {
             this.next();
+            this.startProgress();
         }, this.duration);
     },
 
     stop() {
         this.isPlaying = false;
         this.updatePlayButton();
+        this.stopProgress();
 
         if (this.interval) {
             clearInterval(this.interval);
@@ -140,169 +273,45 @@ const Slideshow = {
 
     next() {
         if (this.photos.length === 0) return;
-
         this.currentIndex = (this.currentIndex + 1) % this.photos.length;
-        this.animateTransition();
+        this.updateFullscreenSlide();
     },
 
     prev() {
         if (this.photos.length === 0) return;
-
         this.currentIndex = (this.currentIndex - 1 + this.photos.length) % this.photos.length;
-        this.animateTransition();
+        this.updateFullscreenSlide();
     },
 
-    animateTransition() {
-        const preview = document.getElementById('slideshowPreview');
-        const img = preview.querySelector('img');
-        
-        if (!img) {
-            this.updateUI();
-            return;
-        }
+    startProgress() {
+        const progressBar = document.getElementById('fsProgressBar');
+        if (!progressBar) return;
 
-        switch (this.transition) {
-            case 'fade':
-                img.style.opacity = '0';
-                setTimeout(() => {
-                    img.src = this.photos[this.currentIndex].src;
-                    img.style.opacity = '1';
-                }, 300);
-                break;
+        progressBar.style.transition = 'none';
+        progressBar.style.width = '0%';
 
-            case 'slide':
-                img.style.transform = 'translateX(-100%)';
-                setTimeout(() => {
-                    img.src = this.photos[this.currentIndex].src;
-                    img.style.transform = 'translateX(0)';
-                }, 300);
-                break;
+        setTimeout(() => {
+            progressBar.style.transition = `width ${this.duration}ms linear`;
+            progressBar.style.width = '100%';
+        }, 50);
+    },
 
-            case 'zoom':
-                img.style.transform = 'scale(0.5)';
-                img.style.opacity = '0';
-                setTimeout(() => {
-                    img.src = this.photos[this.currentIndex].src;
-                    img.style.transform = 'scale(1)';
-                    img.style.opacity = '1';
-                }, 300);
-                break;
-
-            default:
-                img.src = this.photos[this.currentIndex].src;
+    stopProgress() {
+        const progressBar = document.getElementById('fsProgressBar');
+        if (progressBar) {
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '0%';
         }
     },
 
     updatePlayButton() {
-        const btn = document.getElementById('playPauseBtn');
-        if (btn) {
-            btn.innerHTML = this.isPlaying 
-                ? '<i class="fas fa-pause"></i>' 
-                : '<i class="fas fa-play"></i>';
-        }
-    },
+        const btn = document.getElementById('fsPlayPauseBtn');
+        const modalBtn = document.getElementById('playPauseBtn');
 
-    startFullscreen() {
-        if (this.photos.length === 0) {
-            Toast.warning('No Photos', 'Please select photos first');
-            return;
-        }
+        const icon = this.isPlaying ? 'fa-pause' : 'fa-play';
 
-        // Create fullscreen slideshow
-        const overlay = document.createElement('div');
-        overlay.className = 'fullscreen-slideshow';
-        overlay.innerHTML = `
-            <div class="fs-content">
-                <img src="${this.photos[0].src}" alt="Slideshow">
-            </div>
-            <button class="fs-close" onclick="Slideshow.exitFullscreen()">&times;</button>
-            <div class="fs-controls">
-                <button onclick="Slideshow.prev()"><i class="fas fa-chevron-left"></i></button>
-                <button onclick="Slideshow.toggle()"><i class="fas fa-pause"></i></button>
-                <button onclick="Slideshow.next()"><i class="fas fa-chevron-right"></i></button>
-            </div>
-        `;
-
-        document.body.appendChild(overlay);
-        this.currentIndex = 0;
-        this.play();
-
-        // Add fullscreen styles
-        const style = document.createElement('style');
-        style.id = 'fullscreen-style';
-        style.textContent = `
-            .fullscreen-slideshow {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: #000;
-                z-index: 9999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .fs-content img {
-                max-width: 100%;
-                max-height: 100%;
-                transition: all 0.5s ease;
-            }
-            .fs-close {
-                position: absolute;
-                top: 20px;
-                right: 20px;
-                width: 50px;
-                height: 50px;
-                background: rgba(255,255,255,0.1);
-                border: none;
-                border-radius: 50%;
-                color: white;
-                font-size: 2rem;
-                cursor: pointer;
-            }
-            .fs-controls {
-                position: absolute;
-                bottom: 30px;
-                left: 50%;
-                transform: translateX(-50%);
-                display: flex;
-                gap: 20px;
-            }
-            .fs-controls button {
-                width: 60px;
-                height: 60px;
-                background: rgba(255,215,0,0.2);
-                border: 1px solid rgba(255,215,0,0.5);
-                border-radius: 50%;
-                color: #FFD700;
-                font-size: 1.5rem;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
-            .fs-controls button:hover {
-                background: #FFD700;
-                color: #000;
-            }
-        `;
-        document.head.appendChild(style);
-    },
-
-    exitFullscreen() {
-        this.stop();
-        const overlay = document.querySelector('.fullscreen-slideshow');
-        const style = document.getElementById('fullscreen-style');
-        
-        if (overlay) overlay.remove();
-        if (style) style.remove();
-    },
-
-    clearSelection() {
-        this.photos = [];
-        this.currentIndex = 0;
-        Utils.storage.set('slideshowPhotos', []);
-        this.loadAvailablePhotos();
-        this.updateUI();
+        if (btn) btn.innerHTML = `<i class="fas ${icon}"></i>`;
+        if (modalBtn) modalBtn.innerHTML = `<i class="fas ${icon}"></i>`;
     }
 };
 
@@ -330,9 +339,10 @@ function prevSlide() {
 function addToSlideshow() {
     const photo = Viewer.getCurrentPhoto();
     if (photo) {
-        if (!Slideshow.photos.some(p => p.id === photo.id)) {
+        if (!Slideshow.selectedIds.includes(photo.id)) {
             Slideshow.photos.push(photo);
-            Utils.storage.set('slideshowPhotos', Slideshow.photos);
+            Slideshow.selectedIds.push(photo.id);
+            Slideshow.savePhotos();
             Toast.success('Added!', 'Photo added to slideshow');
         } else {
             Toast.info('Already Added', 'This photo is already in the slideshow');
