@@ -102,7 +102,7 @@ const Admin = {
         document.getElementById(`preview-${id}`)?.remove();
     },
 
-    async uploadPhotos() {
+    async async uploadPhotos() {
         if (!Auth.isSuperAdmin() || !Auth.currentUser.ghToken) {
             Toast.error('Access Denied', 'Missing GitHub Token or Admin access.');
             return;
