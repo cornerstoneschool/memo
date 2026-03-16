@@ -3,7 +3,7 @@
 // ========================================
 
 const App = {
-    async async init() {
+    async init() {
         // Hide loader after everything is ready
         window.addEventListener('load', () => {
             setTimeout(() => {

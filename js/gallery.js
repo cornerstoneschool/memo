@@ -12,7 +12,7 @@ const Gallery = {
     photosPerPage: 12,
     currentPage: 1,
 
-    async async init() {
+    async init() {
         await this.loadData();
         this.setupEventListeners();
         this.render();
