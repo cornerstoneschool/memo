@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memo Pics 2025 | Farewell Gallery</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loader -->
+    <div id="loader" class="loader">
+        <div class="loader-content">
+            <div class="loader-ring"></div>
+            <h2>✨ Memo Pics 2025 ✨</h2>
+            <p>Loading memories...</p>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content glass-card login-modal">
+            <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+            <div class="login-header">
+                <div class="login-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h2>Welcome Back</h2>
+                <p>Login to access exclusive content</p>
+            </div>
+            
+            <div class="login-tabs">
+                <button class="login-tab active" data-tab="teacher">
+                    <i class="fas fa-chalkboard-teacher"></i> Teacher
+                </button>
+                <button class="login-tab" data-tab="admin">
+                    <i class="fas fa-crown"></i> Super Admin
+                </button>
+            </div>
+
+            <form id="loginForm" class="login-form">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="loginUsername" placeholder="Username" required>
+                    <span class="input-highlight"></span>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="Password" required>
+                    <span class="input-highlight"></span>
+                    <button type="button" class="password-toggle" onclick="togglePassword()">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="login-error" id="loginError"></div>
+                <button type="submit" class="btn-login">
+                    <span>Login</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="login-decoration">
+                <div class="decoration-circle"></div>
+                <div class="decoration-circle"></div>
+                <div class="decoration-circle"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminPanel" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content glass-card admin-panel">
+            <button class="modal-close" onclick="closeAdminPanel()">&times;</button>
+            
+            <div class="admin-header">
+                <h2><i class="fas fa-crown"></i> Super Admin Panel</h2>
+                <div class="admin-user">
+                    <span id="adminName">Admin</span>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="admin-tabs">
+                <button class="admin-tab active" data-tab="upload">
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+                <button class="admin-tab" data-tab="manage">
+                    <i class="fas fa-images"></i> Manage
+                </button>
+                <button class="admin-tab" data-tab="categories">
+                    <i class="fas fa-folder"></i> Categories
+                </button>
+                <button class="admin-tab" data-tab="moderators">
+                    <i class="fas fa-users-cog"></i> Moderators
+                </button>
+                <button class="admin-tab" data-tab="analytics">
+                    <i class="fas fa-chart-bar"></i> Analytics
+                </button>
+                <button class="admin-tab" data-tab="settings">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+
+            <!-- Upload Tab -->
+            <div class="admin-tab-content active" id="uploadTab">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h3>Drag & Drop Photos Here</h3>
+                    <p>or click to browse</p>
+                    <input type="file" id="fileInput" multiple accept="image/*" hidden>
+                    <button class="btn-gold" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i> Browse Files
+                    </button>
+                </div>
+
+                <div class="upload-preview" id="uploadPreview"></div>
+
+                <div class="upload-options">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="uploadCategory">
+                            <option value="all">All Images</option>
+                            <option value="candid">Candid Moments</option>
+                            <option value="stage">Stage Performances</option>
+                            <option value="group">Group Photos</option>
+                            <option value="teachers">With Teachers</option>
+                            <option value="teachers-only">Teachers Only 🔒</option>
+                            <option value="decorations">Decorations</option>
+                            <option value="awards">Awards & Recognition</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Visibility</label>
+                        <select id="uploadVisibility">
+                            <option value="public">Public</option>
+                            <option value="teachers">Teachers Only</option>
+                        </select>
+                    </div>
+                    <button class="btn-gold btn-upload" onclick="uploadPhotos()">
+                        <i class="fas fa-upload"></i> Upload Photos
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manage Tab -->
+            <div class="admin-tab-content" id="manageTab">
+                <div class="manage-toolbar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search photos..." id="manageSearch">
+                    </div>
+                    <select id="manageFilter">
+                        <option value="all">All Categories</option>
+                    </select>
+                    <button class="btn-danger" onclick="deleteSelected()">
+                        <i class="fas fa-trash"></i> Delete Selected
+                    </button>
+                </div>
+                <div class="manage-grid" id="manageGrid"></div>
+            </div>
+
+            <!-- Categories Tab -->
+            <div class="admin-tab-content" id="categoriesTab">
+                <div class="category-form">
+                    <input type="text" id="newCategoryName" placeholder="Category Name">
+                    <input type="text" id="newCategoryIcon" placeholder="Icon (e.g., fa-camera)">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="categoryTeachersOnly">
+                        <span>Teachers Only</span>
+                    </label>
+                    <button class="btn-gold" onclick="addCategory()">
+                        <i class="fas fa-plus"></i> Add Category
+                    </button>
+                </div>
+                <div class="categories-list" id="categoriesList"></div>
+            </div>
+
+            <!-- Moderators Tab -->
+            <div class="admin-tab-content" id="moderatorsTab">
+                <div class="moderator-form">
+                    <input type="text" id="modUsername" placeholder="Username">
+                    <input type="password" id="modPassword" placeholder="Password">
+                    <select id="modRole">
+                        <option value="moderator">Moderator</option>
+                        <option value="teacher">Teacher</option>
+                    </select>
+                    <button class="btn-gold" onclick="addModerator()">
+                        <i class="fas fa-user-plus"></i> Add User
+                    </button>
+                </div>
+                <div class="moderators-list" id="moderatorsList"></div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div class="admin-tab-content" id="analyticsTab">
+                <div class="analytics-cards">
+                    <div class="stat-card glass-card">
+                        <i class="fas fa-images"></i>
+                        <div class="stat-info">
+                            <h3 id="totalPhotos">0</h3>
+                            <p>Total Photos</p>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <i class="fas fa-heart"></i>
+                        <div class="stat-info">
+                            <h3 id="totalReactions">0</h3>
+                            <p>Total Reactions</p>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <i class="fas fa-download"></i>
+                        <div class="stat-info">
+                            <h3 id="totalDownloads">0</h3>
+                            <p>Downloads</p>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <i class="fas fa-eye"></i>
+                        <div class="stat-info">
+                            <h3 id="totalViews">0</h3>
+                            <p>Total Views</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="analytics-chart" id="analyticsChart"></div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="admin-tab-content" id="settingsTab">
+                <div class="settings-group">
+                    <h3><i class="fas fa-paint-brush"></i> Appearance</h3>
+                    <label class="toggle-label">
+                        <span>Enable Animations</span>
+                        <input type="checkbox" id="settingAnimations" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <label class="toggle-label">
+                        <span>Show Reaction Counts</span>
+                        <input type="checkbox" id="settingReactions" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-group">
+                    <h3><i class="fas fa-download"></i> Downloads</h3>
+                    <label class="toggle-label">
+                        <span>Enable Downloads</span>
+                        <input type="checkbox" id="settingDownloads" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <label class="toggle-label">
+                        <span>Add Watermark</span>
+                        <input type="checkbox" id="settingWatermark">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-group">
+                    <h3><i class="fas fa-database"></i> Data</h3>
+                    <button class="btn-gold" onclick="exportData()">
+                        <i class="fas fa-file-export"></i> Export Data
+                    </button>
+                    <button class="btn-gold" onclick="importData()">
+                        <i class="fas fa-file-import"></i> Import Data
+                    </button>
+                    <button class="btn-danger" onclick="clearAllData()">
+                        <i class="fas fa-trash"></i> Clear All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Viewer Modal -->
+    <div id="photoViewer" class="photo-viewer">
+        <div class="viewer-overlay"></div>
+        <button class="viewer-close" onclick="closeViewer()">&times;</button>
+        <button class="viewer-nav viewer-prev" onclick="navigatePhoto(-1)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="viewer-nav viewer-next" onclick="navigatePhoto(1)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <div class="viewer-content">
+            <img id="viewerImage" src="" alt="Photo">
+            <div class="viewer-info glass-card">
+                <div class="viewer-reactions">
+                    <button class="reaction-btn" data-reaction="love" onclick="addReaction('love')">
+                        <span class="reaction-emoji">❤️</span>
+                        <span class="reaction-count" id="count-love">0</span>
+                    </button>
+                    <button class="reaction-btn" data-reaction="laugh" onclick="addReaction('laugh')">
+                        <span class="reaction-emoji">😂</span>
+                        <span class="reaction-count" id="count-laugh">0</span>
+                    </button>
+                    <button class="reaction-btn" data-reaction="emotional" onclick="addReaction('emotional')">
+                        <span class="reaction-emoji">😢</span>
+                        <span class="reaction-count" id="count-emotional">0</span>
+                    </button>
+                    <button class="reaction-btn" data-reaction="fire" onclick="addReaction('fire')">
+                        <span class="reaction-emoji">🔥</span>
+                        <span class="reaction-count" id="count-fire">0</span>
+                    </button>
+                    <button class="reaction-btn" data-reaction="clap" onclick="addReaction('clap')">
+                        <span class="reaction-emoji">👏</span>
+                        <span class="reaction-count" id="count-clap">0</span>
+                    </button>
+                    <button class="reaction-btn" data-reaction="star" onclick="addReaction('star')">
+                        <span class="reaction-emoji">⭐</span>
+                        <span class="reaction-count" id="count-star">0</span>
+                    </button>
+                </div>
+                <div class="viewer-actions">
+                    <button class="action-btn" onclick="downloadPhoto()">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="action-btn" onclick="sharePhoto()">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                    <button class="action-btn" onclick="createSticker()">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
+                    <button class="action-btn" onclick="addToSlideshow()">
+                        <i class="fas fa-film"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticker Maker Modal -->
+    <div id="stickerMaker" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content glass-card sticker-modal">
+            <button class="modal-close" onclick="closeStickerMaker()">&times;</button>
+            <h2><i class="fab fa-whatsapp"></i> WhatsApp Sticker Maker</h2>
+            
+            <div class="sticker-workspace">
+                <div class="sticker-preview">
+                    <canvas id="stickerCanvas"></canvas>
+                </div>
+                <div class="sticker-tools">
+                    <button class="tool-btn active" data-tool="crop">
+                        <i class="fas fa-crop"></i> Crop
+                    </button>
+                    <button class="tool-btn" data-tool="text">
+                        <i class="fas fa-font"></i> Text
+                    </button>
+                    <button class="tool-btn" data-tool="draw">
+                        <i class="fas fa-pencil-alt"></i> Draw
+                    </button>
+                    <button class="tool-btn" data-tool="removebg">
+                        <i class="fas fa-eraser"></i> Remove BG
+                    </button>
+                </div>
+            </div>
+            
+            <div class="sticker-actions">
+                <button class="btn-gold" onclick="downloadSticker()">
+                    <i class="fas fa-download"></i> Download Sticker
+                </button>
+                <button class="btn-gold" onclick="addToStickerPack()">
+                    <i class="fas fa-plus"></i> Add to Pack
+                </button>
+            </div>
+            
+            <div class="sticker-pack" id="stickerPack">
+                <h3>Sticker Pack (<span id="stickerCount">0</span>/30)</h3>
+                <div class="sticker-pack-grid" id="stickerPackGrid"></div>
+                <button class="btn-gold" onclick="exportStickerPack()" id="exportPackBtn" disabled>
+                    <i class="fab fa-whatsapp"></i> Export Pack
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slideshow Modal -->
+    <div id="slideshowModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content glass-card slideshow-modal">
+            <button class="modal-close" onclick="closeSlideshow()">&times;</button>
+            <h2><i class="fas fa-film"></i> Memory Slideshow</h2>
+            
+            <div class="slideshow-container">
+                <div class="slideshow-preview" id="slideshowPreview"></div>
+                <div class="slideshow-controls">
+                    <button onclick="prevSlide()"><i class="fas fa-step-backward"></i></button>
+                    <button onclick="toggleSlideshow()" id="playPauseBtn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button onclick="nextSlide()"><i class="fas fa-step-forward"></i></button>
+                </div>
+            </div>
+            
+            <div class="slideshow-settings">
+                <div class="form-group">
+                    <label>Duration per slide</label>
+                    <input type="range" id="slideDuration" min="1" max="10" value="3">
+                    <span id="durationValue">3s</span>
+                </div>
+                <div class="form-group">
+                    <label>Transition</label>
+                    <select id="slideTransition">
+                        <option value="fade">Fade</option>
+                        <option value="slide">Slide</option>
+                        <option value="zoom">Zoom</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="slideshow-photos">
+                <h3>Selected Photos (<span id="slideshowCount">0</span>)</h3>
+                <div class="slideshow-photos-grid" id="slideshowPhotosGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="shareModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content glass-card share-modal">
+            <button class="modal-close" onclick="closeShareModal()">&times;</button>
+            <h2><i class="fas fa-share-alt"></i> Share Photo</h2>
+            
+            <div class="share-buttons">
+                <button class="share-btn whatsapp" onclick="shareToWhatsApp()">
+                    <i class="fab fa-whatsapp"></i>
+                    <span>WhatsApp</span>
+                </button>
+                <button class="share-btn instagram" onclick="shareToInstagram()">
+                    <i class="fab fa-instagram"></i>
+                    <span>Instagram</span>
+                </button>
+                <button class="share-btn facebook" onclick="shareToFacebook()">
+                    <i class="fab fa-facebook"></i>
+                    <span>Facebook</span>
+                </button>
+                <button class="share-btn twitter" onclick="shareToTwitter()">
+                    <i class="fab fa-twitter"></i>
+                    <span>Twitter</span>
+                </button>
+            </div>
+            
+            <div class="share-link">
+                <input type="text" id="shareLink" readonly>
+                <button onclick="copyShareLink()">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="navbar glass-nav">
+            <div class="nav-brand">
+                <span class="brand-icon">📸</span>
+                <span class="brand-text">Memo Pics <span class="brand-year">2025</span></span>
+            </div>
+            <div class="nav-links">
+                <button class="nav-link active" data-section="home">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </button>
+                <button class="nav-link" data-section="gallery">
+                    <i class="fas fa-images"></i>
+                    <span>Gallery</span>
+                </button>
+                <button class="nav-link" data-section="slideshow">
+                    <i class="fas fa-film"></i>
+                    <span>Slideshow</span>
+                </button>
+            </div>
+            <div class="nav-actions">
+                <button class="nav-btn search-btn" onclick="toggleSearch()">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="nav-btn" id="loginBtn" onclick="openLoginModal()">
+                    <i class="fas fa-user"></i>
+                    <span>Login</span>
+                </button>
+                <button class="nav-btn admin-btn hidden" id="adminBtn" onclick="openAdminPanel()">
+                    <i class="fas fa-crown"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Search Bar -->
+        <div class="search-bar glass-card" id="searchBar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search photos...">
+            <button onclick="clearSearch()"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Hero Section -->
+        <section class="hero" id="hero">
+            <div class="hero-bg">
+                <div class="hero-particles" id="heroParticles"></div>
+                <div class="hero-gradient"></div>
+            </div>
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span>🎓 Farewell 2025 🎓</span>
+                </div>
+                <h1 class="hero-title">
+                    <span class="title-line">Memo</span>
+                    <span class="title-line gold">Pics</span>
+                    <span class="title-year">2025</span>
+                </h1>
+                <p class="hero-subtitle">Memories that last forever...</p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="heroPhotos">0</span>
+                        <span class="stat-label">Photos</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="heroReactions">0</span>
+                        <span class="stat-label">Reactions</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="heroDownloads">0</span>
+                        <span class="stat-label">Downloads</span>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn-hero primary" onclick="scrollToGallery()">
+                        <i class="fas fa-images"></i> Explore Gallery
+                    </button>
+                    <button class="btn-hero secondary" onclick="startSlideshow()">
+                        <i class="fas fa-play"></i> Watch Slideshow
+                    </button>
+                </div>
+            </div>
+            <div class="hero-scroll">
+                <span>Scroll Down</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </section>
+
+        <!-- Featured Section -->
+        <section class="featured-section" id="featured">
+            <div class="section-header">
+                <h2><i class="fas fa-star"></i> Featured Moments</h2>
+                <p>Most loved photos from the farewell</p>
+            </div>
+            <div class="featured-carousel" id="featuredCarousel"></div>
+        </section>
+
+        <!-- Gallery Section -->
+        <section class="gallery-section" id="gallery">
+            <div class="section-header">
+                <h2><i class="fas fa-images"></i> Photo Gallery</h2>
+                <p>All the captured memories</p>
+            </div>
+
+            <!-- Category Tabs -->
+            <div class="category-tabs glass-card" id="categoryTabs">
+                <button class="category-tab active" data-category="all">
+                    <i class="fas fa-th"></i>
+                    <span>All Photos</span>
+                </button>
+                <!-- Dynamic categories will be added here -->
+            </div>
+
+            <!-- Filter & Sort -->
+            <div class="gallery-toolbar">
+                <div class="filter-group">
+                    <select id="sortSelect">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="popular">Most Popular</option>
+                        <option value="downloads">Most Downloaded</option>
+                    </select>
+                </div>
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button class="view-btn" data-view="masonry">
+                        <i class="fas fa-columns"></i>
+                    </button>
+                </div>
+                <button class="btn-gold" onclick="downloadAllVisible()" id="downloadAllBtn">
+                    <i class="fas fa-download"></i> Download All
+                </button>
+            </div>
+
+            <!-- Photo Grid -->
+            <div class="photo-grid" id="photoGrid">
+                <!-- Photos will be dynamically loaded -->
+            </div>
+
+            <!-- Load More -->
+            <div class="load-more" id="loadMore">
+                <button class="btn-gold" onclick="loadMorePhotos()">
+                    <i class="fas fa-plus"></i> Load More
+                </button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer glass-card">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="brand-icon">📸</span>
+                    <span>Memo Pics 2025</span>
+                </div>
+                <div class="footer-credits">
+                    <p>Website Architected by</p>
+                    <p class="architects">
+                        <span class="architect-name">Sailesh</span>
+                        <span class="architect-separator">&</span>
+                        <span class="architect-name">Jaswanth</span>
+                    </p>
+                </div>
+                <div class="footer-hearts">
+                    <span>Made with</span>
+                    <i class="fas fa-heart"></i>
+                    <span>for Batch 2025</span>
+                </div>
+            </div>
+            <div class="footer-wave">
+                <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+                    <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"></path>
+                </svg>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/gallery.js"></script>
+    <script src="js/viewer.js"></script>
+    <script src="js/reactions.js"></script>
+    <script src="js/stickers.js"></script>
+    <script src="js/slideshow.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
